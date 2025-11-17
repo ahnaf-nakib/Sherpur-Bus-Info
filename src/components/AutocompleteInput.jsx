@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { districts } from "../data/districts"; // district list import
+import { districts } from "../data/districts";
 
 const AutocompleteInput = ({ value, onChange, placeholder }) => {
+  const [inputValue, setInputValue] = useState("");
   const [suggestions, setSuggestions] = useState([]);
 
   const handleChange = (e) => {
     const input = e.target.value;
-    onChange(input);
+    setInputValue(input);
 
     if (input.length > 0) {
       const filtered = districts.filter(d =>
@@ -19,7 +20,8 @@ const AutocompleteInput = ({ value, onChange, placeholder }) => {
   };
 
   const handleSelect = (district) => {
-    onChange(district);
+    onChange(district);   // <-- single selection
+    setInputValue(district);
     setSuggestions([]);
   };
 
@@ -27,7 +29,7 @@ const AutocompleteInput = ({ value, onChange, placeholder }) => {
     <div style={{ position: "relative" }}>
       <input
         type="text"
-        value={value}
+        value={inputValue}
         placeholder={placeholder}
         onChange={handleChange}
         style={{
@@ -39,6 +41,7 @@ const AutocompleteInput = ({ value, onChange, placeholder }) => {
           boxSizing: "border-box"
         }}
       />
+
       {suggestions.length > 0 && (
         <ul style={{
           position: "absolute",

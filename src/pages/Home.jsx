@@ -1,19 +1,24 @@
-// Home.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BusCard from "../components/BusCard";
 import FilterBar from "../components/FilterBar";
 import AutocompleteInput from "../components/AutocompleteInput";
 import NoticeBoard from "../components/NoticeBoard";
-import Footer from "../components/Footer";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
+import bgImage from "../assets/Gemini_Generated_Image_u2c4w8u2c4w8u2c4.png";
 
 const Home = () => {
   const navigate = useNavigate();
-  const [search, setSearch] = useState({ from: "Sherpur", to: "", time: "", type: "" });
+  const [search, setSearch] = useState({
+    from: "Sherpur",
+    to: "",
+    time: "",
+    type: ""
+  });
+
   const [buses, setBuses] = useState([]);
-  const [visibleCount, setVisibleCount] = useState(6); // প্রথমে ৪টি দেখাবে
+  const [visibleCount, setVisibleCount] = useState(6);
 
   useEffect(() => {
     const fetchBuses = async () => {
@@ -28,132 +33,175 @@ const Home = () => {
     fetchBuses();
   }, []);
 
-  const filteredBuses = buses.filter(bus =>
-    (!search.from || bus.from.toLowerCase().includes(search.from.toLowerCase())) &&
-    (!search.to || bus.to.toLowerCase().includes(search.to.toLowerCase())) &&
-    (!search.time || bus.slot === search.time) &&
-    (!search.type || bus.type === search.type)
-  );
+  // Route-aware filtering
+  const filteredBuses = buses.filter(bus => {
+    const busRoute = bus.route || [bus.from, bus.to]; // fallback if no route array
+    const fromMatch = !search.from || busRoute.includes(search.from);
+    const toMatch = !search.to || busRoute.includes(search.to);
+    const timeMatch = !search.time || bus.slot === search.time;
+    const typeMatch = !search.type || bus.type === search.type;
 
-  // শুধুমাত্র visibleCount অনুযায়ী card দেখাবে
+    return fromMatch && toMatch && timeMatch && typeMatch;
+  });
+
   const visibleBuses = filteredBuses.slice(0, visibleCount);
 
   const handleSeeMore = () => {
-    setVisibleCount(prev => prev + 6); // প্রতি click এ ৪টি আরও দেখাবে
+    setVisibleCount(prev => prev + 6);
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "1200px", margin: "auto", fontFamily: "'Segoe UI', sans-serif" }}>
-      
-      {/* Header */}
-      <div style={{
-        textAlign: "center",
-        marginBottom: "25px",
-        backgroundColor: "#2563EB",
-        color: "#fff",
-        padding: "25px",
-        borderRadius: "14px",
-        boxShadow: "0 6px 20px rgba(0,0,0,0.15)"
-      }}>
-        <h1 style={{ margin: 0, fontSize: "32px", fontWeight: "bold" }}>Find Sherpur Bus Routes</h1>
-        <p style={{ margin: "8px 0 0 0", fontSize: "17px" }}>Search buses by route, time, and type</p>
-      </div>
+    <div style={{ fontFamily: "'Segoe UI', sans-serif" }}>
 
-      {/* Notice Board */}
-      <NoticeBoard
-        title="Important Notice"
-        message="শেরপুর বাস তথ্য প্ল্যাটফর্মে আপনাকে স্বাগতম!
-        এখানে শেরপুর থেকে চলাচলকারী সকল জেলার বাসের তথ্য দেওয়া হবে।
-        কাজ এখনও চলমান।
-        
-        আপনার কোনো বাসের তথ্য আপডেট বা নতুন যুক্ত করতে চাইলে Add Bus Info পেইজে সাবমিট করুন।
-        ধন্যবাদ।"
-      />
-
-      {/* Search & Filter */}
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "15px",
-        marginBottom: "35px",
-        backgroundColor: "#f1f5f9",
-        padding: "20px",
-        borderRadius: "14px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.08)"
-      }}>
-        <AutocompleteInput
-          value={search.from}
-          onChange={val => setSearch({ ...search, from: val })}
-          placeholder="From"
-        />
-        <AutocompleteInput
-          value={search.to}
-          onChange={val => setSearch({ ...search, to: val })}
-          placeholder="To"
-        />
-        <FilterBar filters={search} setFilters={setSearch} />
-
-        <button
-          onClick={() => navigate(`/search?from=${search.from}&to=${search.to}&time=${search.time}&type=${search.type}`)}
+      {/* HERO SECTION WITH BACKGROUND IMAGE */}
+      <div
+        style={{
+          padding: "25px 20px",
+          backgroundImage: `url(${bgImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center center",
+          backgroundRepeat: "no-repeat",
+          borderBottomLeftRadius: "20px",
+          borderBottomRightRadius: "20px",
+          boxShadow: "0 6px 15px rgba(0,0,0,0.2)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "15px"
+        }}
+      >
+        {/* Header */}
+        <div
           style={{
-            padding: "14px",
-            backgroundColor: "#10B981",
+            textAlign: "center",
+            backgroundColor: "rgba(37, 99, 235, 0.85)",
             color: "#fff",
-            border: "none",
-            borderRadius: "10px",
-            fontSize: "16px",
-            fontWeight: "600",
-            cursor: "pointer",
-            transition: "0.3s"
+            padding: "15px 20px",
+            borderRadius: "12px",
+            boxShadow: "0 4px 15px rgba(0,0,0,0.15)",
+            maxWidth: "750px",
+            width: "100%"
           }}
-          onMouseEnter={e => (e.target.style.backgroundColor = "#059669")}
-          onMouseLeave={e => (e.target.style.backgroundColor = "#10B981")}
         >
-          Search Buses
-        </button>
-      </div>
-
-      {/* Bus Cards */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-        gap: "20px"
-      }}>
-        {visibleBuses.length ? (
-          visibleBuses.map(bus => <BusCard key={bus.id} bus={bus} />)
-        ) : (
-          <p style={{ textAlign: "center", fontSize: "18px", color: "#6B7280", gridColumn: "1/-1" }}>
-            No buses found.
+          <h1 style={{ margin: 0, fontSize: "26px", fontWeight: "bold" }}>
+            Find Sherpur Bus Routes
+          </h1>
+          <p style={{ margin: "6px 0 0 0", fontSize: "14px" }}>
+            Search buses by route, time, and type
           </p>
-        )}
-      </div>
+        </div>
 
-      {/* See More Button */}
-      {visibleCount < filteredBuses.length && (
-        <div style={{ textAlign: "center", margin: "25px 0" }}>
+        {/* Notice Board */}
+        <NoticeBoard
+          title="Important Notice"
+          message={`শেরপুর বাস তথ্য প্ল্যাটফর্মে আপনাকে স্বাগতম!
+এখানে শেরপুর থেকে চলাচলকারী সকল জেলার বাসের তথ্য দেওয়া হবে।
+কাজ এখনও চলমান।
+
+আপনার কোনো বাসের তথ্য আপডেট বা নতুন যুক্ত করতে চাইলে Add Bus Info পেইজে সাবমিট করুন।
+ধন্যবাদ।`}
+          style={{ maxWidth: "750px", width: "100%" }}
+        />
+
+        {/* Search Section */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            marginTop: "10px",
+            backgroundColor: "rgba(255,255,255,0.9)",
+            padding: "14px",
+            borderRadius: "12px",
+            boxShadow: "0 3px 10px rgba(0,0,0,0.12)",
+            maxWidth: "750px",
+            width: "100%"
+          }}
+        >
+          <AutocompleteInput
+            value={search.from}
+            onChange={val => setSearch({ ...search, from: val })}
+            placeholder="From"
+          />
+
+          <AutocompleteInput
+            value={search.to}
+            onChange={val => setSearch({ ...search, to: val })}
+            placeholder="To"
+          />
+
+          <FilterBar filters={search} setFilters={setSearch} />
+
           <button
-            onClick={handleSeeMore}
+            onClick={() =>
+              navigate(
+                `/search?from=${search.from}&to=${search.to}&time=${search.time}&type=${search.type}`
+              )
+            }
             style={{
-              padding: "12px 20px",
-              backgroundColor: "#2563EB",
+              padding: "10px",
+              backgroundColor: "#10B981",
               color: "#fff",
               border: "none",
               borderRadius: "10px",
-              fontSize: "15px",
+              fontSize: "14px",
               fontWeight: "600",
               cursor: "pointer",
-              transition: "0.3s"
+              alignSelf: "center",
+              maxWidth: "170px",
+              width: "100%"
             }}
-            onMouseEnter={e => (e.target.style.backgroundColor = "#1E40AF")}
-            onMouseLeave={e => (e.target.style.backgroundColor = "#2563EB")}
           >
-            See More
+            Search Buses
           </button>
         </div>
-      )}
+      </div>
 
-      {/* Footer */}
-      <Footer />
+      {/* Bus Cards Section */}
+      <div
+        style={{
+          padding: "20px 15px",
+          maxWidth: "1200px",
+          margin: "auto",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: "20px"
+          }}
+        >
+          {visibleBuses.length ? (
+            visibleBuses.map(bus => <BusCard key={bus.id} bus={bus} />)
+          ) : (
+            <p style={{ textAlign: "center", fontSize: "16px", color: "#6B7280" }}>
+              No buses found.
+            </p>
+          )}
+        </div>
+
+        {visibleCount < filteredBuses.length && (
+          <div style={{ textAlign: "center", margin: "15px 0" }}>
+            <button
+              onClick={handleSeeMore}
+              style={{
+                padding: "10px 18px",
+                backgroundColor: "#2563EB",
+                color: "#fff",
+                border: "none",
+                borderRadius: "10px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer"
+              }}
+            >
+              See More
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
